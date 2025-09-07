@@ -52,7 +52,7 @@ st.markdown(
 )
 
 st.set_page_config(
-    page_title = "AI Finance Dashboard",
+    page_title = "News2Sentiment",
     page_icon= "💰",
     layout="wide",
     initial_sidebar_state = "expanded"
