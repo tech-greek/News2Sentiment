@@ -63,7 +63,7 @@ alt.themes.enable("dark")
 end_date_default = datetime.today()
 start_date_default = end_date_default - timedelta(days=20)
 with st.sidebar:
-    st.title("AI Finance Dashboard 💰")
+    st.title("News2Sentiment")
     tickers_input = st.sidebar.text_input("Enter Stock Tickers (comma-separated):", "AAPL")
     tickers = [ticker.strip().upper() for ticker in tickers_input.split(",") if ticker.strip()]
     start_date = st.sidebar.date_input("Start Date", value=start_date_default)
