@@ -27,12 +27,12 @@ def fetch_news(search_terms):
                 news_title = clean_title(news_item.title)
                 news_link = shorten_url(news_item.link)
                 publication_date = news_item.published
-                news_source = news_item.source.get("title")
-                source_url = news_item.source.get("href")
-                articles.append({"title": news_title, 'url': news_link, 'published_at': publication_date,})
+                articles.append({"title": news_title, 'url': news_link, 'published_at': publication_date})
+        print(articles)
+        return articles
     else:
             print(f"No news found for the term: {search_terms}")
-    print(articles[0].get("published_at"))
+
 
 if __name__ == "__main__":
     search_terms = "AAPL Stock"

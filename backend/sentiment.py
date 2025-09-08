@@ -1,21 +1,10 @@
-import os
-from newsapi import NewsApiClient
+from transformers import pipeline
 
 
-api = NewsApiClient(api_key=os.environ.get('NEWS_API_KEY'))
+pipe = pipeline("text-classification", model="ProsusAI/finbert")
 
-def fetch_news(ticker, from_date, to_date):
 
-    print("from_date:", from_date, type(from_date))
-    print("to_date:", to_date, type(to_date))
 
-    all_articles = api.get_everything(
-        q=ticker,
-        from_param=from_date,
-        to=to_date,
-        language='en',
-        sort_by='relevancy',
-        page_size=100,
-    )
-
-    return all_articles['articles']
+if __name__ == "__main__":
+    result = pipe("Why TD Cowen Stays Bullish on Apple (AAPL) Stock at $275 PT")
+    print(result)

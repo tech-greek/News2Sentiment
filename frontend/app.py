@@ -171,6 +171,7 @@ if st.sidebar.button("Analyze"):
         st.subheader("Recent News")
         with st.spinner(f"Fetching news for {ticker}..."):
             articles = rss_scraping.fetch_news(ticker)
+            print(articles)
             if not articles:
                 st.warning(f"No articles found for {ticker}.")
             else:
