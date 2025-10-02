@@ -1,8 +1,6 @@
 import feedparser
-import sys
 import requests
 from bs4 import BeautifulSoup
-import json
 
 
 def clean_title(title):
@@ -15,8 +13,6 @@ def scrape_google_news_search(search_terms):
         search_query = f"{search_terms} stock"
         encoded_query = requests.utils.quote(search_query)
         url = f"https://www.google.com/search?q={encoded_query}&gl=us&tbm=nws&num=100"
-        
-        print(f"🔍 Scraping Google News search: {url}")
         
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36"
@@ -37,7 +33,6 @@ def scrape_google_news_search(search_terms):
         
         for selector in selectors_to_try:
             elements = soup.select(selector)
-            print(f"Found {len(elements)} elements with selector: {selector}")
             
             if elements:
                 for el in elements[:5]:  # Limit to 5 articles
@@ -97,17 +92,14 @@ def scrape_google_news_search(search_terms):
                         })
                         
                     except Exception as e:
-                        print(f"Error parsing element: {e}")
                         continue
                 
                 if news_results:
                     break  # If we found results with this selector, stop trying others
         
-        print(f"✅ Found {len(news_results)} articles using Google News search scraping")
         return news_results
         
     except Exception as e:
-        print(f"❌ Error scraping Google News search: {e}")
         return []
 
 def fetch_news_rss_fallback(search_terms):
@@ -123,33 +115,19 @@ def fetch_news_rss_fallback(search_terms):
             news_link = news_item.link
             publication_date = news_item.published
             articles.append({"title": news_title, 'url': news_link, 'published_at': publication_date})
-        print(articles)
         return articles
     else:
-        print(f"No news found for the term: {search_terms}")
         return []
 
 def fetch_news(search_terms):
     """
     Fetch news using Google News search scraping (with RSS fallback)
     """
-    print(f"🔍 Fetching news for: {search_terms}")
-    
     # Try Google News search scraping first
     articles = scrape_google_news_search(search_terms)
     
     # If search scraping doesn't work well, fall back to RSS
     if not articles:
-        print("📰 Falling back to RSS feed...")
         articles = fetch_news_rss_fallback(search_terms)
     
-    print(f"📊 Total articles found: {len(articles)}")
     return articles
-
-
-if __name__ == "__main__":
-    search_terms = "AAPL Stock"
-    if not search_terms:
-        print("No search terms provided. Exiting.")
-        sys.exit()
-    fetch_news(search_terms)

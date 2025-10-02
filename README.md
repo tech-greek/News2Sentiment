@@ -11,7 +11,6 @@ An AI-powered stock sentiment analysis application that combines real-time news 
 
 ### 🔍 **Advanced News Integration**
 - **Google News Scraping**: Beautiful Soup-based web scraping for real article URLs
-- **NewsAPI Integration**: Professional news API for reliable article access
 - **Content Extraction**: Full article content parsing from major news sources
 - **Source Diversity**: Articles from Investopedia, CNN, CNBC, Yahoo Finance, and more
 
@@ -54,7 +53,6 @@ An AI-powered stock sentiment analysis application that combines real-time news 
    Create a `.env` file in the root directory:
    ```env
    GEMINI_API_KEY=your_gemini_api_key_here
-   NEWS_API_KEY=your_news_api_key_here  # Optional
    ```
 
 5. **Run the application**
@@ -67,13 +65,10 @@ An AI-powered stock sentiment analysis application that combines real-time news 
 ```
 News2Sentiment/
 ├── backend/
-│   ├── __init__.py
 │   ├── rss_scraping.py      # Google News scraping with Beautiful Soup
 │   ├── gemini_analysis.py   # AI content processing and market summaries
-│   ├── sentiment.py         # FinBERT sentiment analysis
-│   └── scraping.py          # NewsAPI integration
+│   └── sentiment.py         # FinBERT sentiment analysis
 ├── frontend/
-│   ├── __init__.py
 │   └── app.py              # Streamlit web application
 ├── .env                    # Environment variables
 ├── requirements.txt        # Python dependencies
@@ -133,10 +128,6 @@ News2Sentiment/
 2. Create a new API key
 3. Add to `.env` file: `GEMINI_API_KEY=your_key_here`
 
-### NewsAPI (Optional)
-1. Sign up at [NewsAPI](https://newsapi.org/)
-2. Get your API key
-3. Add to `.env` file: `NEWS_API_KEY=your_key_here`
 
 ## 🚨 Troubleshooting
 
@@ -159,7 +150,6 @@ News2Sentiment/
 ### Core Libraries
 - **Streamlit**: Web application framework
 - **Beautiful Soup**: Web scraping and HTML parsing
-- **NewsAPI**: Professional news API integration
 - **Requests**: HTTP library for API calls
 - **YFinance**: Yahoo Finance data integration
 - **Plotly**: Interactive charts and visualizations
@@ -173,12 +163,11 @@ News2Sentiment/
 ### Utility Libraries
 - **Python-dotenv**: Environment variable management
 - **Feedparser**: RSS feed parsing (fallback)
-- **Altair**: Additional charting capabilities
 
 ## 🛠️ Technical Skills Demonstrated
 
 - **Web Scraping**: Beautiful Soup for Google News scraping
-- **API Integration**: NewsAPI and Google Gemini API
+- **API Integration**: Google Gemini API
 - **Machine Learning**: FinBERT for financial sentiment analysis
 - **Data Visualization**: Plotly and Streamlit for interactive dashboards
 - **Web Development**: Streamlit for responsive web applications
@@ -204,7 +193,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Yahoo Finance**: Real-time stock data
 - **Streamlit**: Web application framework
 - **Beautiful Soup**: Web scraping capabilities
-- **NewsAPI**: Professional news integration
 
 ---
 

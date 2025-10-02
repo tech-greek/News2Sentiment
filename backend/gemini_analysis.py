@@ -18,16 +18,12 @@ else:
 def extract_article_content(url):
     """Extract article content using newspaper3k"""
     try:
-        print(f"Extracting content from: {url}")
         article = Article(url)
         article.download()
         article.parse()
         
         if not article.text or len(article.text.strip()) < 100:
-            print(f"Article text too short or empty: {len(article.text) if article.text else 0} chars")
             return None
-            
-        print(f"Successfully parsed article: {len(article.text)} characters")
         return {
             'title': article.title,
             'text': article.text,
@@ -37,7 +33,6 @@ def extract_article_content(url):
             'top_image': article.top_image
         }
     except Exception as e:
-        print(f"Error extracting content from {url}: {e}")
         return None
 
 def condense_with_gemini(title, content, max_chars=4000):
@@ -69,7 +64,6 @@ def condense_with_gemini(title, content, max_chars=4000):
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        print(f"Error with Gemini condensation: {e}")
         return f"Condensation failed: {str(e)}"
 
 def process_articles_with_gemini(articles):
@@ -83,8 +77,6 @@ def process_articles_with_gemini(articles):
         url = article['url']
         title = article['title']
         published_at = article['published_at']
-        
-        print(f"Processing article {i+1}/{len(articles)}: {title}")
         
         # Extract content
         content_data = extract_article_content(url)
@@ -104,10 +96,6 @@ def process_articles_with_gemini(articles):
                 'url': url,
                 'published_at': published_at
             })
-            
-            print(f"Successfully processed: {content_data['title']}")
-        else:
-            print(f"Failed to extract content from: {url}")
     
     return condensed_articles
 
@@ -145,22 +133,4 @@ def generate_market_summary(condensed_articles, ticker):
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        print(f"Error generating market summary: {e}")
         return f"Summary generation failed: {str(e)}"
-
-if __name__ == "__main__":
-    # Test the functions
-    test_articles = [
-        {
-            'title': 'Test Article',
-            'url': 'https://example.com/test',
-            'published_at': '2025-01-01'
-        }
-    ]
-    
-    condensed = process_articles_with_gemini(test_articles)
-    print("Condensed Articles:", condensed)
-    
-    if condensed:
-        summary = generate_market_summary(condensed, "TEST")
-        print("Market Summary:", summary)

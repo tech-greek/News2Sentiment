@@ -1,5 +1,4 @@
 from transformers import pipeline
-import numpy as np
 
 # Initialize the FinBERT model for financial sentiment analysis
 pipe = pipeline("text-classification", model="ProsusAI/finbert")
@@ -77,7 +76,7 @@ def calculate_final_sentiment_score(condensed_articles):
     labels = [result['label'] for result in sentiment_results]
     
     # Weight by confidence
-    weighted_score = np.average(raw_scores, weights=confidences)
+    weighted_score = sum(score * conf for score, conf in zip(raw_scores, confidences)) / sum(confidences)
     
     # Convert from (-1, 1) to (0, 100) scale
     # -1 maps to 0, 0 maps to 50, 1 maps to 100
@@ -101,7 +100,7 @@ def calculate_final_sentiment_score(condensed_articles):
     neutral_count = labels.count('NEUTRAL')
     
     # Calculate overall confidence
-    overall_confidence = np.mean(confidences)
+    overall_confidence = sum(confidences) / len(confidences)
     
     return {
         "final_score": round(final_score, 1),
@@ -154,16 +153,3 @@ def get_sentiment_emoji(score):
         return "📉"  # Trending down for slightly bearish
     else:
         return "📉"  # Trending down for bearish
-
-if __name__ == "__main__":
-    # Test the functions
-    test_articles = [
-        "Apple stock is performing exceptionally well with strong earnings and positive outlook",
-        "Market concerns about Apple's future growth and competitive pressures",
-        "Apple announces new innovative product launch with strong market reception"
-    ]
-    
-    final_result = calculate_final_sentiment_score(test_articles)
-    print(f"Final sentiment result: {final_result}")
-    print(f"Color: {get_sentiment_color(final_result['final_score'])}")
-    print(f"Emoji: {get_sentiment_emoji(final_result['final_score'])}")

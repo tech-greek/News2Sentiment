@@ -4,7 +4,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from datetime import datetime, timedelta, time
 import streamlit as st
 import streamlit.components.v1 as components
-import altair as alt
 import plotly.express as px
 from backend import rss_scraping
 from backend.gemini_analysis import process_articles_with_gemini, generate_market_summary
@@ -61,7 +60,6 @@ st.set_page_config(
 )
 
 
-alt.themes.enable("dark")
 end_date_default = datetime.today()
 start_date_default = end_date_default - timedelta(days=20)
 with st.sidebar:
@@ -73,8 +71,6 @@ with st.sidebar:
 
 start_date = datetime.combine(start_date, time.min)
 end_date = datetime.combine(end_date, time.max)
-
-print(f"Start: {start_date} ({type(start_date)}), End: {end_date} ({type(end_date)})")
 
 
 
@@ -105,10 +101,6 @@ if st.sidebar.button("Analyze"):
             if volume is None and not hist.empty:
                 volume = hist['Volume'].iloc[-1]
 
-            # Formatting for display
-            last_price_display = f"${last_price:,.2f}" if last_price is not None else "N/A"
-            market_cap_display = f"${market_cap:,.0f}" if market_cap is not None else "N/A"
-            volume_display = f"{volume:,}" if volume is not None else "N/A"
 
         except Exception as e:
             st.error(f"Error fetching data for {ticker}: {e}")
@@ -157,7 +149,6 @@ if st.sidebar.button("Analyze"):
         with st.spinner(f"Fetching news for {ticker}..."):
             # Fetch news once
             articles = rss_scraping.fetch_news(ticker)
-            print(articles)
             
             if not articles:
                 st.warning(f"No articles found for {ticker}.")
@@ -376,7 +367,6 @@ if st.sidebar.button("Analyze"):
                     
             except Exception as e:
                 st.error(f"Error in AI analysis: {e}")
-                print(f"Error: {e}")
             finally:
                 # Clear progress indicators
                 progress_bar.empty()
