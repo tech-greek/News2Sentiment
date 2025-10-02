@@ -1,13 +1,15 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from datetime import datetime, timedelta, time, date
+from datetime import datetime, timedelta, time
+import streamlit as st
+import streamlit.components.v1 as components
 import altair as alt
 import plotly.express as px
 from backend import rss_scraping
+from backend.gemini_analysis import process_articles_with_gemini, generate_market_summary
+from backend.sentiment import calculate_final_sentiment_score, get_sentiment_color, get_sentiment_emoji
 import yfinance as yf
-import streamlit as st
-import streamlit.components.v1 as components
 
 def render_news_card(title, url, pub_date):
     html_code = f"""
@@ -58,8 +60,8 @@ st.set_page_config(
     initial_sidebar_state = "expanded"
 )
 
-alt.themes.enable("dark")
 
+alt.themes.enable("dark")
 end_date_default = datetime.today()
 start_date_default = end_date_default - timedelta(days=20)
 with st.sidebar:
@@ -117,33 +119,23 @@ if st.sidebar.button("Analyze"):
 
         # Row 1: Stock Overview & Sentiment
         st.subheader(f"{ticker} - Stock Overview")
-        col1, col2 = st.columns([2, 1])
 
-        with col1:
-            st.metric(
-                label="Last Price",
-                value=f"${last_price:,.2f}" if last_price else "N/A"
-            )
-            st.metric(
-                label="Market Cap",
-                value=f"{market_cap / 1e12:.2f}T" if market_cap and market_cap >= 1e12 else
-                f"{market_cap / 1e9:.2f}B" if market_cap and market_cap >= 1e9 else
-                f"{market_cap / 1e6:.2f}M" if market_cap else "N/A"
-            )
-            st.metric(
-                label="Volume",
-                value=f"{volume:,}" if volume else "N/A"
-            )
+        st.metric(
+            label="Last Price",
+            value=f"${last_price:,.2f}" if last_price else "N/A"
+        )
+        st.metric(
+            label="Market Cap",
+            value=f"{market_cap / 1e12:.2f}T" if market_cap and market_cap >= 1e12 else
+            f"{market_cap / 1e9:.2f}B" if market_cap and market_cap >= 1e9 else
+            f"{market_cap / 1e6:.2f}M" if market_cap else "N/A"
+        )
+        st.metric(
+            label="Volume",
+            value=f"{volume:,}" if volume else "N/A"
+        )
 
-        with col2:
-            sentiment_score = 0.72  # still placeholder until we integrate Gemini
-            gauge_html = f"""
-                    <div style="width:150px;height:150px;border-radius:50%;border:8px solid {'#4CAF50' if sentiment_score > 0.3 else '#F44336'};display:flex;align-items:center;justify-content:center;font-size:24px;color:white;">
-                        {int(sentiment_score * 100)}%
-                    </div>
-                    <p style="text-align:center;color:gray;font-size:0.9em;">Market Sentiment</p>
-                    """
-            st.markdown(gauge_html, unsafe_allow_html=True)
+        
 
         st.markdown("---")
 
@@ -160,25 +152,234 @@ if st.sidebar.button("Analyze"):
 
         st.markdown("---")
 
-        # Row 3: AI-Generated Summary
-        st.subheader("Market Mood Summary")
-        st.write(
-            "Overall sentiment is positive. Recent news highlights strong quarterly earnings and optimistic guidance for the next quarter.")  # Placeholder
-
-        st.markdown("---")
-
-        # Row 4: News Cards
+        # Row 3: News Cards
         st.subheader("Recent News")
         with st.spinner(f"Fetching news for {ticker}..."):
+            # Fetch news once
             articles = rss_scraping.fetch_news(ticker)
             print(articles)
+            
             if not articles:
                 st.warning(f"No articles found for {ticker}.")
             else:
+                # Display news cards
                 for article in articles:
-
                     render_news_card(
                         title=article.get("title", "No Title"),
                         url=article.get("url", "#"),
                         pub_date=article.get("published_at", "No Published Date"),
                     )
+
+        st.markdown("---")
+
+        # Row 4: AI Analysis (Gemini + FinBERT)
+        st.subheader("AI Analysis")
+        
+        if articles:
+            # Process all 5 articles for comprehensive analysis
+            limited_articles = articles[:5]
+            st.info(f"🚀 Processing {len(limited_articles)} articles for comprehensive analysis...")
+            
+            # Create progress bar
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            try:
+                # Step 1: Process articles with Gemini
+                status_text.text("🤖 Condensing articles with Gemini...")
+                progress_bar.progress(20)
+                
+                condensed_articles = process_articles_with_gemini(limited_articles)
+                progress_bar.progress(40)
+                
+                if condensed_articles:
+                    # Step 2: Run FinBERT analysis
+                    status_text.text("🧠 Analyzing sentiment with FinBERT...")
+                    progress_bar.progress(60)
+                    
+                    sentiment_result = calculate_final_sentiment_score(condensed_articles)
+                    progress_bar.progress(80)
+                    
+                    # Step 3: Generate market summary
+                    status_text.text("📊 Generating market summary...")
+                    market_summary = generate_market_summary(condensed_articles, ticker)
+                    progress_bar.progress(100)
+                    status_text.text("✅ Analysis complete!")
+                    
+                    # Display results
+                    st.success(f"✅ Analyzed {len(condensed_articles)} articles successfully!")
+                    
+                    # Enhanced Visual Sentiment Display
+                    st.subheader("📊 Market Sentiment Analysis")
+                    
+                    # Main sentiment display with multiple visual elements
+                    col1, col2, col3 = st.columns([2, 1, 1])
+                    
+                    with col1:
+                        # Large circular gauge with dynamic colors and emojis
+                        score = sentiment_result['final_score']
+                        color = get_sentiment_color(score)
+                        emoji = get_sentiment_emoji(score)
+                        
+                        # Create a more sophisticated gauge
+                        gauge_html = f"""
+                        <div style="
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            padding: 20px;
+                            background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+                            border-radius: 20px;
+                            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                            border: 2px solid {color};
+                        ">
+                            <div style="
+                                width: 200px;
+                                height: 200px;
+                                border-radius: 50%;
+                                background: conic-gradient({color} 0deg, {color} {score * 3.6}deg, #333 {score * 3.6}deg, #333 360deg);
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                position: relative;
+                                margin-bottom: 15px;
+                            ">
+                                <div style="
+                                    width: 160px;
+                                    height: 160px;
+                                    border-radius: 50%;
+                                    background: #1e1e1e;
+                                    display: flex;
+                                    flex-direction: column;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-family: 'Segoe UI', sans-serif;
+                                ">
+                                    <div style="font-size: 48px; margin-bottom: 5px;">{emoji}</div>
+                                    <div style="font-size: 32px; font-weight: bold; color: {color};">{score:.0f}</div>
+                                    <div style="font-size: 14px; color: #999;">/ 100</div>
+                                </div>
+                            </div>
+                            <div style="
+                                text-align: center;
+                                color: {color};
+                                font-size: 18px;
+                                font-weight: bold;
+                                margin-bottom: 5px;
+                            ">{sentiment_result['sentiment_label']}</div>
+                            <div style="
+                                text-align: center;
+                                color: #999;
+                                font-size: 14px;
+                            ">Market Sentiment Score</div>
+                        </div>
+                        """
+                        st.markdown(gauge_html, unsafe_allow_html=True)
+                    
+                    with col2:
+                        # Article breakdown with visual indicators
+                        st.markdown("### 📈 Article Breakdown")
+                        
+                        # Positive articles
+                        pos_color = "#4CAF50" if sentiment_result['positive_count'] > 0 else "#666"
+                        st.markdown(f"""
+                        <div style="
+                            background: {pos_color}20;
+                            border-left: 4px solid {pos_color};
+                            padding: 10px;
+                            margin: 5px 0;
+                            border-radius: 5px;
+                        ">
+                            <div style="color: {pos_color}; font-weight: bold;">📈 {sentiment_result['positive_count']} Positive</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Negative articles
+                        neg_color = "#F44336" if sentiment_result['negative_count'] > 0 else "#666"
+                        st.markdown(f"""
+                        <div style="
+                            background: {neg_color}20;
+                            border-left: 4px solid {neg_color};
+                            padding: 10px;
+                            margin: 5px 0;
+                            border-radius: 5px;
+                        ">
+                            <div style="color: {neg_color}; font-weight: bold;">📉 {sentiment_result['negative_count']} Negative</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Neutral articles
+                        neu_color = "#FF9800" if sentiment_result['neutral_count'] > 0 else "#666"
+                        st.markdown(f"""
+                        <div style="
+                            background: {neu_color}20;
+                            border-left: 4px solid {neu_color};
+                            padding: 10px;
+                            margin: 5px 0;
+                            border-radius: 5px;
+                        ">
+                            <div style="color: {neu_color}; font-weight: bold;">➡️ {sentiment_result['neutral_count']} Neutral</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col3:
+                        # Confidence and analysis metrics
+                        st.markdown("### 🎯 Analysis Confidence")
+                        
+                        # Confidence progress bar
+                        confidence_pct = sentiment_result['confidence'] * 100
+                        conf_color = "#4CAF50" if confidence_pct >= 80 else "#FF9800" if confidence_pct >= 60 else "#F44336"
+                        
+                        st.markdown(f"""
+                        <div style="
+                            background: #333;
+                            border-radius: 10px;
+                            padding: 15px;
+                            margin: 10px 0;
+                        ">
+                            <div style="color: {conf_color}; font-size: 24px; font-weight: bold; text-align: center;">
+                                {confidence_pct:.1f}%
+                            </div>
+                            <div style="
+                                background: #555;
+                                border-radius: 5px;
+                                height: 8px;
+                                margin: 10px 0;
+                                overflow: hidden;
+                            ">
+                                <div style="
+                                    background: {conf_color};
+                                    height: 100%;
+                                    width: {confidence_pct}%;
+                                    transition: width 0.3s ease;
+                                "></div>
+                            </div>
+                            <div style="color: #999; font-size: 12px; text-align: center;">
+                                Analysis Confidence
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Total articles processed
+                        st.metric(
+                            label="Articles Analyzed",
+                            value=sentiment_result['total_articles'],
+                            delta="Total Processed"
+                        )
+                    
+                    # Display market summary
+                    st.subheader("Market Mood Summary")
+                    st.markdown(market_summary)
+                    
+                else:
+                    st.warning("⚠️ Could not condense articles for analysis")
+                    
+            except Exception as e:
+                st.error(f"Error in AI analysis: {e}")
+                print(f"Error: {e}")
+            finally:
+                # Clear progress indicators
+                progress_bar.empty()
+                status_text.empty()
+        else:
+            st.warning("No articles available for AI analysis.")
